@@ -8,19 +8,96 @@ import type { User } from '@supabase/supabase-js';
 
 export default function Home(): React.ReactElement {
   const [user, setUser] = useState<User | null>(null);
+  const [joinId, setJoinId] = useState<string>('');
+  const [activeGames, setActiveGames] = useState<{ id: string; host: string }[]>([]);
   const supabase = createClient();
   const router = useRouter();
 
   useEffect(() => {
-    supabase.auth.getUser()
-      .then(({ data, error }) => {
-        if (error) {
-          console.error('Error fetching user:', error);
-        } else {
-          setUser(data.user ?? null);
-        }
-      });
+    supabase.auth.getUser().then(({ data, error }) => {
+      if (error) console.error(error);
+      else setUser(data.user);
+    });
   }, [supabase]);
+
+  useEffect(() => {
+    const loadActive = async () => {
+      const { data, error } = await supabase
+        .from('games')
+        .select('id, host_user_id')
+        .eq('status', 'lobby')
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching active games:', error);
+        return;
+      }
+
+      setActiveGames(
+        data.map(g => ({
+          id: g.id,
+          host: g.host_user_id,
+        }))
+      );
+    };
+
+    loadActive();
+  }, [supabase]);
+
+  useEffect(() => {
+    const subscription = supabase.channel('public:games')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'games', filter: "status=eq.lobby" },
+        (payload) => {
+          setActiveGames(a => [...a, { id: payload.new.id, host: payload.new.host_user_id }]);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'games', filter: "status=eq.lobby" },
+        (payload) => {
+          if (payload.new.status !== 'lobby') {
+            setActiveGames(a => a.filter(g => g.id !== payload.new.id));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'games', filter: "status=eq.lobby" },
+        (payload) => {
+          if (payload.new.status !== 'lobby') {
+            setActiveGames(a => a.filter(g => g.id !== payload.new.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [supabase]);
+
+  const hostGame = async () => {
+    const { data: [game], error } = await supabase
+      .from('games')
+      .insert({ host_user_id: user!.id })
+      .select('id');
+    if (error) return console.error(error);
+    await supabase
+      .from('game_players')
+      .insert({ game_id: game.id, user_id: user!.id });
+    router.push(`/lobby/${game.id}`);
+  };
+
+  const joinGame = async (gameId?: string) => {
+    const id = gameId || joinId;
+    if (!id) return;
+    await supabase
+      .from('game_players')
+      .insert({ game_id: id, user_id: user!.id });
+    router.push(`/lobby/${id}`);
+  };
 
   const handleSignOut = async (): Promise<void> => {
     const { error } = await supabase.auth.signOut();
@@ -32,17 +109,62 @@ export default function Home(): React.ReactElement {
   };
 
   return (
-    <div className="bg-black text-white min-h-screen flex flex-col items-center justify-center">
-      <p>Hello world</p>
-      <p>Logged in: {user?.email ?? ''}</p>
-      <button
-        type="button"
-        onClick={handleSignOut}
-        className="mt-4 flex items-center px-4 py-2 bg-gray-900 rounded hover:bg-gray-800 transition"
-      >
-        <LogOut className="mr-2" size={16} />
-        Sign out
-      </button>
+    <div className="min-h-screen flex flex-col items-center p-6 align-center justify-center">
+      <div className="w-full max-w-md rounded-2xl shadow-md p-6 space-y-6">
+        <p className="text-lg">
+          Logged in as <span className="font-semibold">{user?.user_metadata?.username}</span>
+        </p>
+        <button
+          className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+          onClick={hostGame}
+        >
+          Host New Game
+        </button>
+        <div className="flex space-x-3">
+          <input
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+            placeholder="Game ID to join"
+            value={joinId}
+            onChange={e => setJoinId(e.target.value)}
+          />
+          <button
+            className="px-4 py-2 bg-green-500 text-white rounded-lg disabled:opacity-50 transition"
+            onClick={() => joinGame()}
+            disabled={!joinId}
+          >
+            Join Game
+          </button>
+        </div>
+        <div className="pt-4 border-t border-gray-200 space-y-3">
+          <h2 className="text-lg font-medium">Open Lobbies</h2>
+          <ul className="space-y-2">
+            {activeGames.length > 0 ? (
+              activeGames.map(game => (
+                <li
+                  key={game.id}
+                  className="flex justify-between items-center bg-slate-900 p-3 rounded-lg hover:bg-slate-800 transition"
+                >
+                  <span>Game {game.id} (hosted by {game.host})</span>
+                  <button
+                    className="text-blue-500 hover:underline"
+                    onClick={() => joinGame(game.id)}
+                  >
+                    Join
+                  </button>
+                </li>
+              ))
+            ) : (
+              <li className="text-gray-500">No active games</li>
+            )}
+          </ul>
+        </div>
+        <button
+          className="w-full mt-4 flex items-center justify-center py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+          onClick={handleSignOut}
+        >
+          <LogOut className="mr-2" /> Logout
+        </button>
+      </div>
     </div>
   );
 }

@@ -1,82 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { LogOut } from 'lucide-react';
-import type { User } from '@supabase/supabase-js';
+import useUser from '@/hooks/useUser';
+import { useGames } from '@/hooks/useGames';
 
 export default function Home(): React.ReactElement {
-  const [user, setUser] = useState<User | null>(null);
+  const user = useUser();
   const [joinId, setJoinId] = useState<string>('');
-  const [activeGames, setActiveGames] = useState<{ id: string; host: string }[]>([]);
+  const games = useGames();
   const supabase = createClient();
   const router = useRouter();
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data, error }) => {
-      if (error) console.error(error);
-      else setUser(data.user);
-    });
-  }, [supabase]);
-
-  useEffect(() => {
-    const loadActive = async () => {
-      const { data, error } = await supabase
-        .from('games')
-        .select('id, host_user_id')
-        .eq('status', 'lobby')
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching active games:', error);
-        return;
-      }
-
-      setActiveGames(
-        data.map(g => ({
-          id: g.id,
-          host: g.host_user_id,
-        }))
-      );
-    };
-
-    loadActive();
-  }, [supabase]);
-
-  useEffect(() => {
-    const subscription = supabase.channel('public:games')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'games', filter: "status=eq.lobby" },
-        (payload) => {
-          setActiveGames(a => [...a, { id: payload.new.id, host: payload.new.host_user_id }]);
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'games', filter: "status=eq.lobby" },
-        (payload) => {
-          if (payload.new.status !== 'lobby') {
-            setActiveGames(a => a.filter(g => g.id !== payload.new.id));
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'games', filter: "status=eq.lobby" },
-        (payload) => {
-          if (payload.new.status !== 'lobby') {
-            setActiveGames(a => a.filter(g => g.id !== payload.new.id));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
-  }, [supabase]);
 
   const hostGame = async () => {
     const { data: [game], error } = await supabase
@@ -91,6 +27,7 @@ export default function Home(): React.ReactElement {
   };
 
   const joinGame = async (gameId?: string) => {
+    // takes param gameId from textbox input or from game list
     const id = gameId || joinId;
     if (!id) return;
     await supabase
@@ -138,8 +75,8 @@ export default function Home(): React.ReactElement {
         <div className="pt-4 border-t border-gray-200 space-y-3">
           <h2 className="text-lg font-medium">Open Lobbies</h2>
           <ul className="space-y-2">
-            {activeGames.length > 0 ? (
-              activeGames.map(game => (
+            {games.length > 0 ? (
+              games.map(game => (
                 <li
                   key={game.id}
                   className="flex justify-between items-center bg-slate-900 p-3 rounded-lg hover:bg-slate-800 transition"

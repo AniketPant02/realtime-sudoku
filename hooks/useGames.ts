@@ -7,6 +7,8 @@ import { createClient } from "@/utils/supabase/client";
 export type Game = {
     id: string;
     host: string;
+    updated_at: string;
+    difficulty: string;
 };
 
 export function useGames() {
@@ -14,13 +16,13 @@ export function useGames() {
     const supabase = createClient();
 
     useEffect(() => {
-        // load existing lobby games
+        // load existing in-progress games
         const loadActive = async () => {
             const { data, error } = await supabase
                 .from("games")
-                .select("id, host_user_id")
+                .select("id, host_user_id, updated_at, difficulty")
                 .eq("status", "in_progress")
-                .order("created_at", { ascending: false });
+                .order("updated_at", { ascending: false });
 
             if (error) {
                 console.error("Error fetching active games (/hooks/useGames.ts):", error);
@@ -31,6 +33,8 @@ export function useGames() {
                 data.map((g) => ({
                     id: g.id,
                     host: g.host_user_id,
+                    updated_at: g.updated_at,
+                    difficulty: g.difficulty,
                 }))
             );
         };
@@ -46,7 +50,7 @@ export function useGames() {
                 (payload) => {
                     setGames((current) => [
                         ...current,
-                        { id: payload.new.id, host: payload.new.host_user_id },
+                        { id: payload.new.id, host: payload.new.host_user_id, updated_at: payload.new.updated_at, difficulty: payload.new.difficulty },
                     ]);
                 }
             )

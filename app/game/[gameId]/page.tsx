@@ -14,6 +14,17 @@ import SudokuBoard from "@/components/SudokuBoard";
 import { isSolved } from "@/utils/sudoku";
 import useSudokuSync from "@/hooks/useSudokuSync";
 
+type Game = {
+    id: string;
+    host_user_id: string;
+    status: string;
+    created_at: string;
+    difficulty: string;
+    puzzle: string;
+    solution: string;
+    updated_at: string;
+};
+
 function Sudoku({ runtimePuzzle, isHost }: { runtimePuzzle: string; isHost: boolean }) {
     const { gameId } = useParams();
     const supabase = createClient();
@@ -41,7 +52,7 @@ export default function Game() {
     const gameId = rawGameId as string;
     const supabase = createClient();
 
-    const [game, setGame] = useState<any>(null);
+    const [game, setGame] = useState<Game | null>(null);
     const [puzzle, setPuzzle] = useState("");
     const me = useUser(); // custom hook to get the current user
     const isHost = game?.host_user_id === me?.id; // check if the current user is the host

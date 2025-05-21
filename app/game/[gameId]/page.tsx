@@ -108,7 +108,7 @@ export default function Game() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-gray-900">
+        <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-slate-100">
             {Object.entries(cursors).map(([id, cur]) => (
                 <div
                     key={id}
@@ -124,31 +124,33 @@ export default function Game() {
                     <span className="text-xs text-white">{cur.username}</span>
                 </div>
             ))}
-            <div className="w-full max-w-md rounded-2xl shadow-lg p-6 space-y-6 bg-gray-800">
-                <div className="flex justify-between items-center">
-                    <h1 className="text-2xl font-bold text-white">Sudoku Board</h1>
+            <section className="w-[min(100%_,26rem)] mx-4 rounded-3xl bg-slate-900/60 backdrop-blur p-6 shadow-2xl ring-1 ring-slate-700/40">
+                {/* header */}
+                <header className="flex items-center justify-between mb-4">
+                    <h1 className="text-2xl font-semibold tracking-wide">Sudoku</h1>
                     <button
                         onClick={leaveGame}
-                        className="text-sm text-red-400 hover:underline"
+                        className="text-rose-400 hover:text-rose-300 transition-colors"
                     >
-                        Leave Game
+                        Leave
                     </button>
+                </header>
+
+                {/* meta */}
+                <div className="flex justify-between text-xs text-slate-400 mb-4">
+                    <span>User&nbsp;•&nbsp;{me?.user_metadata.username}</span>
+                    <span>ID&nbsp;•&nbsp;{gameId}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                    <p className="text-gray-400 truncate">User: {me?.user_metadata.username}</p>
-                    <p className="text-gray-400 truncate">ID: {gameId}</p>
-                </div>
-                <div className="flex justify-center bg-gray-700 rounded-lg">
+
+                {/* board */}
+                <div className="flex justify-center">
                     {puzzle ? (
-                        <Sudoku
-                            runtimePuzzle={puzzle}
-                            isHost={isHost}
-                        />
+                        <Sudoku runtimePuzzle={puzzle} isHost={isHost} />
                     ) : (
-                        <div className="text-lg font-semibold text-gray-400">Loading...</div>
+                        <p className="animate-pulse text-slate-500">Loading…</p>
                     )}
                 </div>
-            </div>
-        </div>
+            </section>
+        </main>
     );
 }

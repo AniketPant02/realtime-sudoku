@@ -42,62 +42,76 @@ export default function Home(): React.ReactElement {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center p-6 align-center justify-center">
-      <div className="w-full max-w-md rounded-2xl shadow-md p-6 space-y-6">
-        <p className="text-lg">
-          Logged in as <span className="font-semibold">{me?.user_metadata?.username}</span>
-        </p>
+    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-slate-100 p-6">
+      <section className="w-[min(100%_,28rem)] mx-4 rounded-3xl bg-slate-900/60 backdrop-blur p-8 shadow-2xl ring-1 ring-slate-700/40 space-y-6">
+        {/* header */}
+        <header className="flex items-center justify-between">
+          <p className="truncate">
+            Logged in as&nbsp;
+            <span className="font-semibold">{me?.user_metadata.username}</span>
+          </p>
+
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-1 text-sm text-rose-400 hover:text-rose-300 transition-colors"
+          >
+            <LogOut size={16} /> Logout
+          </button>
+        </header>
+
+        {/* host button */}
         <button
-          className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
           onClick={hostGame}
+          className="w-full py-3 rounded-xl font-medium bg-cyan-500/90 hover:bg-cyan-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
         >
-          Host New Game
+          Host new game
         </button>
-        <div className="flex space-x-3">
+
+        {/* join by ID */}
+        <div className="flex gap-3">
           <input
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+            className="flex-1 rounded-xl bg-slate-800/60 px-4 py-2 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-400"
             placeholder="Game ID to join"
             value={joinId}
             onChange={e => setJoinId(e.target.value)}
           />
           <button
-            className="px-4 py-2 bg-green-500 text-white rounded-lg disabled:opacity-50 transition"
             onClick={() => joinGame()}
             disabled={!joinId}
+            className="px-4 py-2 rounded-xl font-medium bg-emerald-500/90 hover:bg-emerald-400 disabled:opacity-40 transition-colors"
           >
-            Join Game
+            Join
           </button>
         </div>
-        <div className="pt-4 border-t border-gray-200 space-y-3">
-          <h2 className="text-lg font-medium">Open Lobbies</h2>
-          <ul className="space-y-2">
-            {games.length > 0 ? (
-              games.map(game => (
+
+        {/* open lobbies */}
+        <div className="pt-5 border-t border-slate-700/60 space-y-3">
+          <h2 className="text-lg font-medium">Open lobbies</h2>
+
+          {games.length ? (
+            <ul className="space-y-2 max-h-56 overflow-y-auto">
+              {games.map(g => (
                 <li
-                  key={game.id}
-                  className="flex justify-between items-center bg-slate-900 p-3 rounded-lg hover:bg-slate-800 transition"
+                  key={g.id}
+                  className="flex justify-between items-center rounded-xl bg-slate-800/60 px-4 py-3 hover:bg-slate-800/80 transition-colors"
                 >
-                  <span>Game {game.id} (hosted by {game.host})</span>
+                  <span className="truncate">
+                    {g.id.slice(0, 8)}&nbsp;• host&nbsp;{g.host}
+                  </span>
                   <button
-                    className="text-blue-500 hover:underline"
-                    onClick={() => joinGame(game.id)}
+                    onClick={() => joinGame(g.id)}
+                    className="text-cyan-400 hover:underline"
                   >
                     Join
                   </button>
                 </li>
-              ))
-            ) : (
-              <li className="text-gray-500">No active games</li>
-            )}
-          </ul>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-slate-500">No active games</p>
+          )}
         </div>
-        <button
-          className="w-full mt-4 flex items-center justify-center py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-          onClick={handleSignOut}
-        >
-          <LogOut className="mr-2" /> Logout
-        </button>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

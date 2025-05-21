@@ -112,16 +112,18 @@ export default function Game() {
             {Object.entries(cursors).map(([id, cur]) => (
                 <div
                     key={id}
-                    className="absolute pointer-events-none"
+                    className="fixed z-50 pointer-events-none"
                     style={{
                         left: cur.x,
                         top: cur.y,
-                        translate: "-50% -50%",
+                        transform: "translate(0, 0)",   // or just remove the translate line
                         color: cur.color,
                     }}
                 >
                     <MousePointer2 size={16} />
-                    <span className="text-xs text-white">{cur.username}</span>
+                    <span className="ml-1 rounded bg-black/40 px-1 text-xs font-semibold text-white drop-shadow-md">
+                        {cur.username}
+                    </span>
                 </div>
             ))}
             <section className="w-[min(100%_,26rem)] mx-4 rounded-3xl bg-slate-900/60 backdrop-blur p-6 shadow-2xl ring-1 ring-slate-700/40">

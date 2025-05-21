@@ -39,7 +39,7 @@ export async function signInAnonymously() {
         style: 'capital'
     });
 
-    const { data, error } = await supabase.auth.signInAnonymously({
+    const { error } = await supabase.auth.signInAnonymously({
         options: {
             data: {
                 username: randomHandle

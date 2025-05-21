@@ -17,7 +17,6 @@ import useSudokuSync from "@/hooks/useSudokuSync";
 function Sudoku({ runtimePuzzle, isHost }: { runtimePuzzle: string; isHost: boolean }) {
     const { gameId } = useParams();
     const supabase = createClient();
-    const me = useUser();
     const { board, setCell } = useSudokuSync(gameId as string, runtimePuzzle, isHost);
 
     useEffect(() => {
@@ -27,7 +26,7 @@ function Sudoku({ runtimePuzzle, isHost }: { runtimePuzzle: string; isHost: bool
                 .update({ status: "finished" })
                 .eq("id", gameId);
         }
-    }, [board, isHost, gameId]);
+    }, [board, isHost, gameId, supabase]);
 
     return (
         <>
@@ -64,7 +63,7 @@ export default function Game() {
             setPuzzle(data.puzzle);
         };
         fetchGame();
-    }, [gameId]);
+    }, [gameId, supabase]);
 
     useEffect(() => {
         console.log("Current players:", players);
@@ -91,19 +90,6 @@ export default function Game() {
 
         return () => void supabase.removeChannel(channel);
     }, [gameId, me, supabase]);
-
-    const handlePing = () => {
-        if (!channelRef.current || !me) return;
-        channelRef.current.send({
-            type: "broadcast",
-            event: "button-click",
-            payload: {
-                id: me.id,
-                username: me.user_metadata.username,
-                at: Date.now(),
-            },
-        });
-    };
 
     const leaveGame = () => {
         if (!gameId) return;

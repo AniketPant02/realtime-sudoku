@@ -19,7 +19,7 @@ export function useGames() {
             const { data, error } = await supabase
                 .from("games")
                 .select("id, host_user_id")
-                .eq("status", "lobby")
+                .eq("status", "in_progress")
                 .order("created_at", { ascending: true });
 
             if (error) {

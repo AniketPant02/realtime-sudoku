@@ -6,34 +6,30 @@ import { createClient } from '@/utils/supabase/client';
 import { LogOut } from 'lucide-react';
 import useUser from '@/hooks/useUser';
 import { useGames } from '@/hooks/useGames';
+import { hostGameAction } from "./actions";
 
 export default function Home(): React.ReactElement {
-  const user = useUser();
+  const me = useUser();
   const [joinId, setJoinId] = useState<string>('');
   const games = useGames();
   const supabase = createClient();
   const router = useRouter();
 
   const hostGame = async () => {
-    const { data: [game], error } = await supabase
-      .from('games')
-      .insert({ host_user_id: user!.id })
-      .select('id');
-    if (error) return console.error(error);
-    await supabase
-      .from('game_players')
-      .insert({ game_id: game.id, user_id: user!.id });
-    router.push(`/lobby/${game.id}`);
+    if (!me) return;
+    try {
+      const gameId = await hostGameAction(me.id);
+      if (gameId) router.push(`/game/${gameId}`);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const joinGame = async (gameId?: string) => {
     // takes param gameId from textbox input or from game list
     const id = gameId || joinId;
     if (!id) return;
-    await supabase
-      .from('game_players')
-      .insert({ game_id: id, user_id: user!.id });
-    router.push(`/lobby/${id}`);
+    router.push(`/game/${id}`);
   };
 
   const handleSignOut = async (): Promise<void> => {
@@ -49,7 +45,7 @@ export default function Home(): React.ReactElement {
     <div className="min-h-screen flex flex-col items-center p-6 align-center justify-center">
       <div className="w-full max-w-md rounded-2xl shadow-md p-6 space-y-6">
         <p className="text-lg">
-          Logged in as <span className="font-semibold">{user?.user_metadata?.username}</span>
+          Logged in as <span className="font-semibold">{me?.user_metadata?.username}</span>
         </p>
         <button
           className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"

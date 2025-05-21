@@ -22,8 +22,6 @@ export default function Home(): React.ReactElement {
     if (!me) return;
 
     try {
-      // pass the difficulty to your server action
-      console.log('Hosting game with difficulty:', level);
       const gameId = await hostGameAction(me.id, level);
       if (gameId) router.push(`/game/${gameId}`);
     } catch (err) {

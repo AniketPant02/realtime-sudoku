@@ -66,7 +66,6 @@ export default function HostGameButton({
 
                     <button
                         onClick={() => {
-                            console.log("Hosting at level:", level);   // should appear in console
                             onHost(level);
                             setOpen(false);
                         }}

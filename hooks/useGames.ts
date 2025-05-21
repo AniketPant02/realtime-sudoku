@@ -42,7 +42,7 @@ export function useGames() {
             .channel("public:games")
             .on(
                 "postgres_changes",
-                { event: "INSERT", schema: "public", table: "games", filter: "status=eq.lobby" },
+                { event: "INSERT", schema: "public", table: "games", filter: "status=eq.in_progress" },
                 (payload) => {
                     setGames((current) => [
                         ...current,
@@ -52,16 +52,16 @@ export function useGames() {
             )
             .on(
                 "postgres_changes",
-                { event: "UPDATE", schema: "public", table: "games", filter: "status=eq.lobby" },
+                { event: "UPDATE", schema: "public", table: "games", filter: "status=eq.in_progress" },
                 (payload) => {
-                    if (payload.new.status !== "lobby") {
+                    if (payload.new.status !== "in_progress") {
                         setGames((current) => current.filter((g) => g.id !== payload.new.id));
                     }
                 }
             )
             .on(
                 "postgres_changes",
-                { event: "DELETE", schema: "public", table: "games", filter: "status=eq.lobby" },
+                { event: "DELETE", schema: "public", table: "games", filter: "status=eq.in_progress" },
                 (payload) => {
                     setGames((cur) => cur.filter((g) => g.id !== payload.old.id));
                 }

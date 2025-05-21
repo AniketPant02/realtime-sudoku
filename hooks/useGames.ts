@@ -20,7 +20,7 @@ export function useGames() {
                 .from("games")
                 .select("id, host_user_id")
                 .eq("status", "in_progress")
-                .order("created_at", { ascending: true });
+                .order("created_at", { ascending: false });
 
             if (error) {
                 console.error("Error fetching active games (/hooks/useGames.ts):", error);

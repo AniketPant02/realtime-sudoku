@@ -2,9 +2,9 @@
 import { createClient } from "@/utils/supabase/server";
 import { getSudoku } from 'sudoku-gen';
 
-export async function hostGameAction(userId: string) {
+export async function hostGameAction(userId: string, difficulty: "easy" | "medium" | "hard") {
     const supabase = await createClient();
-    const puzzle = getSudoku("easy");
+    const puzzle = getSudoku(difficulty);
     const { data, error } = await supabase
         .from("games")
         .insert({

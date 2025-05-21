@@ -6,7 +6,10 @@ import { createClient } from '@/utils/supabase/client';
 import { LogOut } from 'lucide-react';
 import useUser from '@/hooks/useUser';
 import { useGames } from '@/hooks/useGames';
+
+import HostGameButton from '@/components/HostGameButton';
 import { hostGameAction } from "./actions";
+import { type Difficulty } from '@/components/HostGameButton';
 
 export default function Home(): React.ReactElement {
   const me = useUser();
@@ -15,13 +18,16 @@ export default function Home(): React.ReactElement {
   const supabase = createClient();
   const router = useRouter();
 
-  const hostGame = async () => {
+  const hostGame = async (level: Difficulty = "easy") => {
     if (!me) return;
+
     try {
-      const gameId = await hostGameAction(me.id);
+      // pass the difficulty to your server action
+      console.log('Hosting game with difficulty:', level);
+      const gameId = await hostGameAction(me.id, level);
       if (gameId) router.push(`/game/${gameId}`);
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -60,12 +66,13 @@ export default function Home(): React.ReactElement {
         </header>
 
         {/* host button */}
-        <button
+        {/* <button
           onClick={hostGame}
           className="w-full py-3 rounded-xl font-medium bg-cyan-500/90 hover:bg-cyan-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
         >
           Host new game
-        </button>
+        </button> */}
+        <HostGameButton onHost={hostGame} />
 
         {/* join by ID */}
         <div className="flex gap-3">

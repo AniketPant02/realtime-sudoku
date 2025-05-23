@@ -104,7 +104,7 @@ export default function Game() {
 
     const leaveGame = () => {
         if (!gameId) return;
-        startTransition(() => leaveGameAction(gameId));
+        startTransition(() => leaveGameAction());
     };
 
     return (

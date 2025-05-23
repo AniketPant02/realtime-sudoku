@@ -9,6 +9,5 @@ import { redirect } from "next/navigation";
  * This function is identical to the one in app/lobby/gameId/actions.ts.
  */
 export async function leaveGameAction(gameId: string): Promise<void> {
-    console.log("leaveGameAction", gameId);
     redirect("/");
 }

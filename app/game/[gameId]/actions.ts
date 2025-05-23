@@ -3,10 +3,7 @@
 import { redirect } from "next/navigation";
 
 /**
- * Remove the current user from the game’s player list.
- * If they were the last player, the game row is also deleted.
- * Finally, the user is redirected to “/”.
- * This function is identical to the one in app/lobby/gameId/actions.ts.
+ * The user is redirected to “/”.
  */
 export async function leaveGameAction(gameId: string): Promise<void> {
     redirect("/");

@@ -77,39 +77,62 @@ export function usePlayerCursors(room: string | null) {
     useEffect(() => {
         if (!me || !room) return;
 
-        const ch = supabase.channel(`presence-room-${room}`);
+        // ① turn this into a presence channel
+        const ch = supabase.channel(`presence-room-${room}`, {
+            config: { presence: { key: me.id } },
+        });
+
         channelRef.current = ch;
 
+        // ② when someone moves, update their cursor
         ch.on("broadcast", { event: "mousemove" }, ({ payload }) => {
             const { position, user, color } = payload as any;
-            setCursors((prev) => ({
+            setCursors(prev => ({
                 ...prev,
                 [user.id]: { ...position, username: user.username, color },
             }));
         });
 
-        const handleMouseMove = (e: MouseEvent) => {
-            if (!channelRef.current) return;
-            channelRef.current.send({
+        // ③ whenever presence sync/join/leave happens, prune cursors
+        const prune = () => {
+            const state = ch.presenceState();          // { [id]: [...] }
+            const active = new Set(Object.keys(state));
+            setCursors(prev => {
+                const next: typeof prev = {};
+                for (let id of active) {
+                    if (prev[id]) next[id] = prev[id];
+                }
+                return next;
+            });
+        };
+
+        ch
+            .on("presence", { event: "sync" }, prune)
+            .on("presence", { event: "join" }, prune)
+            .on("presence", { event: "leave" }, prune)
+            .subscribe(status => {
+                if (status === "SUBSCRIBED") {
+                    ch.track({ id: me.id, username: me.user_metadata.username });
+                    window.addEventListener("mousemove", broadcastMouse);
+                }
+            });
+
+        function broadcastMouse(e: MouseEvent) {
+            ch.send({
                 type: "broadcast",
                 event: "mousemove",
                 payload: {
                     position: { x: e.clientX, y: e.clientY },
-                    user: { id: me.id, username: me.user_metadata.username },
+                    user: { id: me?.id, username: me?.user_metadata.username },
                     color: myColor.current,
                 },
             });
-        };
-
-        ch.subscribe((status) => {
-            if (status === "SUBSCRIBED") {
-                window.addEventListener("mousemove", handleMouseMove);
-            }
-        });
+        }
 
         return () => {
-            window.removeEventListener("mousemove", handleMouseMove);
-            supabase.removeChannel(ch);
+            window.removeEventListener("mousemove", broadcastMouse);
+            ch.untrack();
+            void supabase.removeChannel(ch);
         };
     }, [room, me, supabase]);
 

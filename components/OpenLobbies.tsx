@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { Users, Clock, Trophy, ArrowRightCircle } from "lucide-react"
+import useUser from "@/hooks/useUser";
 
 type Lobby = {
   id: string

@@ -62,6 +62,7 @@ type Cursor = {
     color: string;
 };
 
+// TODO: move to supabase anon login metadata function so this color can be access everywhere via useUser
 const generateRandomColor = () => {
     return `hsl(${Math.floor(Math.random() * 360)}, 100%, 70%)`;
 }
@@ -122,7 +123,7 @@ export function usePlayerCursors(room: string | null) {
                 type: "broadcast",
                 event: "mousemove",
                 payload: {
-                    position: { x: e.clientX, y: e.clientY },
+                    position: { x: e.clientX / window.innerWidth, y: e.clientY / window.innerHeight },
                     user: { id: me?.id, username: me?.user_metadata.username },
                     color: myColor.current,
                 },

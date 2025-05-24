@@ -114,9 +114,10 @@ export default function Game() {
                     key={id}
                     className="fixed z-50 pointer-events-none"
                     style={{
-                        left: cur.x,
-                        top: cur.y,
-                        transform: "translate(0, 0)",   // or just remove the translate line
+                        left: cur.x * window.innerWidth,
+                        top: cur.y * window.innerHeight,
+                        transition: "transform 0.1s ease-in-out",
+                        transform: "translate(0, 0)",
                         color: cur.color,
                     }}
                 >

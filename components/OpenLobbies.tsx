@@ -1,7 +1,9 @@
 "use client"
 
 import type React from "react"
-import { Users, Clock, Trophy, ArrowRightCircle } from "lucide-react"
+import { useState } from "react"
+import { Users, Clock, Trophy, ArrowRightCircle, Trash2 } from "lucide-react"
+import { createClient } from "@/utils/supabase/client"
 import useUser from "@/hooks/useUser";
 
 type Lobby = {
@@ -23,6 +25,28 @@ export interface LobbyItemProps {
 
 function LobbyItem({ lobby, onJoin }: LobbyItemProps): React.ReactElement {
   const { id, host, updated_at, difficulty } = lobby
+
+  const me = useUser() // user is the current user
+  const supabase = createClient()
+  const isHostUser = me?.id === host
+
+  const [copied, setCopied] = useState(false);
+
+  const copyId = () => {
+    navigator.clipboard.writeText(id)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
+  const handleDelete = async () => {
+    const { error } = await supabase
+      .from("games")
+      .delete()
+      .eq("id", id)
+    if (error) {
+      console.error("Failed to delete game:", error)
+    }
+  }
 
   // Format the timestamp nicely
   const formattedDate = new Date(updated_at).toLocaleString(undefined, {
@@ -56,7 +80,6 @@ function LobbyItem({ lobby, onJoin }: LobbyItemProps): React.ReactElement {
       <div className="p-3">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <div className="bg-slate-700/60 rounded-md px-2 py-1 text-xs font-mono">{id.slice(0, 8)}</div>
             <div className={`${difficultyConfig.color} rounded-full px-2.5 py-0.5 text-xs text-white font-medium`}>
               <span className="flex items-center">
                 {difficultyConfig.icon}
@@ -64,14 +87,40 @@ function LobbyItem({ lobby, onJoin }: LobbyItemProps): React.ReactElement {
               </span>
             </div>
           </div>
+          {isHostUser && (
+            <button
+              onClick={handleDelete}
+              className="p-1 text-slate-400 hover:text-rose-400 transition-colors"
+              title="Delete this game"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         <div className="mt-2 space-y-1.5">
           <div className="flex items-center text-slate-300">
             <Users className="h-3.5 w-3.5 mr-2 text-slate-400" />
-            <span className="text-sm">
-              Hosted by <span className="font-medium text-white">{host}</span>
-            </span>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm flex items-center space-x-2">
+                <span>Game</span>
+                <span
+                  onClick={copyId}
+                  title="Click to copy ID"
+                  className="
+                    font-medium text-white 
+                    cursor-pointer hover:underline 
+                    inline-block 
+                    max-w-[30ch]
+                    truncate  
+                    whitespace-nowrap
+                  "
+                >
+                  {id}
+                </span>
+                {copied && <span className="text-xs text-green-400">Copied!</span>}
+              </span>
+            </div>
           </div>
           <div className="flex items-center text-slate-400 text-xs">
             <Clock className="h-3 w-3 mr-2 text-slate-500" />

@@ -1,67 +1,96 @@
 import { useEffect, useRef, useState } from "react";
-import { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
 import { parsePuzzle, boardToString, isValidMove, Cell } from "@/utils/sudoku";
-import debounce from "lodash.debounce";
+import { RealtimeChannel } from "@supabase/supabase-js";
+import useUser from "./useUser";
 
 export default function useSudokuSync(
     gameId: string,
     rawPuzzle: string,
-    isHost: boolean,
 ) {
+    const me = useUser();
     const supabase = createClient();
-    const [board, setBoard] = useState<Cell[][]>(parsePuzzle(rawPuzzle));
+    const [board, setBoard] = useState<Cell[][]>(() =>
+        parsePuzzle(rawPuzzle)
+    );
     const channelRef = useRef<RealtimeChannel | null>(null);
 
-    // attach broadcast channel
+    // helper to apply a single move
+    function applyMove(
+        b: Cell[][],
+        { r, c, v }: { r: number; c: number; v: string }
+    ) {
+        const next = b.map(row => row.map(cell => ({ ...cell })));
+        if (!next[r][c].fixed) {
+            next[r][c].v = v;
+        }
+        return next;
+    }
+
     useEffect(() => {
         if (!gameId) return;
-        const channel = supabase.channel(`sudoku::${gameId}`, {
-            config: { broadcast: { self: false } },
-        });
-        channel.on("broadcast", { event: "cell-update" }, ({ payload }) => {
-            setBoard(b => {
-                const next = b.map(row => row.map(c => ({ ...c })));
-                next[payload.r][payload.c].v = payload.v;
-                return next;
+
+        supabase
+            .from("game_moves")
+            .select("r, c, v")
+            .eq("game_id", gameId)
+            .order("created_at", { ascending: true })
+            .then(({ data, error }) => {
+                if (error) return console.error(error);
+                setBoard(b =>
+                    data!.reduce(
+                        (b, move) => applyMove(b, { r: move.r, c: move.c, v: move.v ?? "" }),
+                        b
+                    )
+                );
             });
-        });
-        channel.subscribe();
+
+        const channel = supabase
+            .channel("realtime_moves")
+            .on(
+                "postgres_changes",
+                {
+                    event: "INSERT",
+                    schema: "public",
+                    table: "game_moves",
+                    filter: `game_id=eq.${gameId}`,
+                },
+                ({ new: move }) => {
+                    const { r, c, v } = move;
+                    setBoard(b =>
+                        applyMove(b, { r: r, c: c, v: v ?? "" })
+                    );
+                }
+            )
+            .subscribe();
+
         channelRef.current = channel;
-        return () => void supabase.removeChannel(channel);
+        return () => {
+            if (channelRef.current) supabase.removeChannel(channelRef.current);
+        };
     }, [gameId]);
 
-    // send changes
-    const setCell = (r: number, c: number, v: string) =>
+    const setCell = (r: number, c: number, v: string) => {
         setBoard(prev => {
-            if (prev[r][c].fixed || !isValidMove(prev, r, c, v)) return prev;
-            const next = prev.map(row => row.map(c => ({ ...c })));
-            next[r][c].v = v;
-            channelRef.current?.send({
-                type: "broadcast",
-                event: "cell-update",
-                payload: { r, c, v },
-            });
+            if (prev[r][c].fixed) return prev;
+            const next = prev.map(row => row.map(cell => ({ ...cell })));
+            next[r][c].v = v;   // v might be '' now
+            // persist this single move (digit or blank)
+            supabase
+                .from("game_moves")
+                .insert({
+                    game_id: gameId,
+                    user_id: me?.id,
+                    r,
+                    c,
+                    v: v === '' ? null : v,  // or just v === '' if you prefer empty-string
+                })
+                .then(({ error }) => {
+                    if (error) console.error("insert move failed:", error);
+                });
             return next;
         });
-
-    // host saves changes to DB
-    const debouncedSave = useRef(
-        debounce(async (latest: Cell[][]) => {
-            const str = boardToString(latest);
-            const { error } = await supabase
-                .from("games")
-                .update({ puzzle: str, updated_at: new Date() })
-                .eq("id", gameId)
-                .select()
-                .single(); // we don't need me.id check here, as this is only called by the host
-            if (error) console.error("DB save failed:", error);
-        }, 400),
-    ).current;
-
-    useEffect(() => {
-        if (isHost) debouncedSave(board);
-    }, [board, isHost, debouncedSave]);
+    };
 
     return { board, setCell };
 }

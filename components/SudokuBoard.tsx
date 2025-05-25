@@ -45,13 +45,13 @@ export default function SudokuBoard({
                         thickRight && "border-r-2 border-slate-600",
                         thickBottom && "border-b-2 border-slate-600",
                     ]
-                        .filter(Boolean)          // remove false | undefined
-                        .join(" ");               // → single class string
+                        .filter(Boolean)
+                        .join(" ");
 
                     return (
                         <input
                             key={`${r}-${c}`}
-                            value={cell.v}
+                            value={cell.v ?? ""}
                             disabled={cell.fixed}
                             maxLength={1}
                             onChange={e => {

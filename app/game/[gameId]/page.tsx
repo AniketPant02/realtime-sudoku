@@ -14,6 +14,7 @@ import SudokuBoard from "@/components/SudokuBoard";
 import { isSolved } from "@/utils/sudoku";
 import useSudokuSync from "@/hooks/useSudokuSync";
 
+// matches Supabase schema in games table
 type Game = {
     id: string;
     host_user_id: string;
@@ -28,7 +29,7 @@ type Game = {
 function Sudoku({ runtimePuzzle, isHost }: { runtimePuzzle: string; isHost: boolean }) {
     const { gameId } = useParams();
     const supabase = createClient();
-    const { board, setCell } = useSudokuSync(gameId as string, runtimePuzzle, isHost);
+    const { board, setCell } = useSudokuSync(gameId as string, runtimePuzzle);
 
     useEffect(() => {
         if (isSolved(board) && isHost) {

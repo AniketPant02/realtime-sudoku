@@ -101,24 +101,27 @@ function LobbyItem({ lobby, onJoin }: LobbyItemProps): React.ReactElement {
         <div className="mt-2 space-y-1.5">
           <div className="flex items-center text-slate-300">
             <Users className="h-3.5 w-3.5 mr-2 text-slate-400" />
-            <div className="flex items-center space-x-2">
-              <span className="text-sm flex items-center space-x-2">
-                <span>Game</span>
+            <div className="flex items-center space-x-2 overflow-hidden">
+              <span className="text-sm flex items-center space-x-2 min-w-0">
+                <span className="flex-shrink-0">Game</span>
                 <span
                   onClick={copyId}
                   title="Click to copy ID"
                   className="
-                    font-medium text-white 
-                    cursor-pointer hover:underline 
-                    inline-block 
-                    max-w-[30ch]
-                    truncate  
-                    whitespace-nowrap
-                  "
+                    cursor-pointer hover:underline
+                    font-medium text-white
+                    truncate flex-shrink basis-[8ch]   /* mobile: ~8 characters */
+                    sm:basis-[16ch]                  /* ≥640px: ~16 characters */
+                    md:basis-[30ch]                  /* ≥768px: ~30 characters */
+                 "
                 >
                   {id}
                 </span>
-                {copied && <span className="text-xs text-green-400">Copied!</span>}
+                {copied && (
+                  <span className="text-xs text-green-400 flex-shrink-0">
+                    Copied!
+                  </span>
+                )}
               </span>
             </div>
           </div>

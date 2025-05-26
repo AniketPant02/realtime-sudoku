@@ -119,7 +119,7 @@ export default function Game() {
                         top: cur.y * window.innerHeight,
                         transition: "transform 0.1s ease-in-out",
                         transform: "translate(0, 0)",
-                        color: cur.color,
+                        color: me?.user_metadata.color,
                     }}
                 >
                     <MousePointer2 size={16} />

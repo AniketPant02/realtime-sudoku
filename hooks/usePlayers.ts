@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 import useUser from "@/hooks/useUser";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import { generateRandomColor } from "@/utils/colors";
 
 type PresenceUser = { id: string; username: string };
 
@@ -62,18 +63,13 @@ type Cursor = {
     color: string;
 };
 
-// TODO: move to supabase anon login metadata function so this color can be access everywhere via useUser
-const generateRandomColor = () => {
-    return `hsl(${Math.floor(Math.random() * 360)}, 100%, 70%)`;
-}
-
 export function usePlayerCursors(room: string | null) {
     const supabase = createClient();
     const me = useUser();
 
     const [cursors, setCursors] = useState<Record<string, Cursor>>({});
     const channelRef = useRef<RealtimeChannel | null>(null);
-    const myColor = useRef(generateRandomColor());
+    const myColor = useRef(me?.user_metadata?.color || generateRandomColor());
 
     useEffect(() => {
         if (!me || !room) return;

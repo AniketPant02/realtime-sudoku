@@ -8,6 +8,7 @@ import {
     colors,
     animals
 } from 'unique-names-generator';
+import { generateRandomColor } from '@/utils/colors';
 
 // for vercel deployment
 const redirectToURL = process.env.NODE_ENV === 'development'
@@ -16,6 +17,7 @@ const redirectToURL = process.env.NODE_ENV === 'development'
 
 export async function signInWithGoogle() {
     const supabase = await createClient()
+
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -42,7 +44,8 @@ export async function signInAnonymously() {
     const { error } = await supabase.auth.signInAnonymously({
         options: {
             data: {
-                username: randomHandle
+                username: randomHandle,
+                color: generateRandomColor(),
             }
         }
     })

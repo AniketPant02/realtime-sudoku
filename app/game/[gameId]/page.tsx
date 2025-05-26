@@ -1,6 +1,7 @@
 "use client";
 
 import React, { startTransition, useEffect, useState, useRef } from "react";
+import { motion } from 'framer-motion';
 import { createClient } from '@/utils/supabase/client'
 import { useParams } from "next/navigation";
 import { MousePointer2 } from "lucide-react";
@@ -41,9 +42,13 @@ function Sudoku({ runtimePuzzle, isHost }: { runtimePuzzle: string; isHost: bool
     }, [board, isHost, gameId, supabase]);
 
     return (
-        <>
+        <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+        >
             <SudokuBoard board={board} setCell={setCell} />
-        </>
+        </motion.div>
     );
 }
 

@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/client";
 import useUser from "@/hooks/useUser";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { generateRandomColor } from "@/utils/colors";
+import { toast } from "react-hot-toast";
 
 type PresenceUser = { id: string; username: string };
 
@@ -33,12 +34,18 @@ export default function usePlayers(room: string) {
 
         channel
             .on("presence", { event: "sync" }, parseState)
-            .on("presence", { event: "join" }, ({ key, newPresences }) =>
+            .on("presence", { event: "join" }, ({ key, newPresences }) => {
                 console.log("join:", key, newPresences)
-            )
-            .on("presence", { event: "leave" }, ({ key, leftPresences }) =>
-                console.log("leave:", key, leftPresences)
-            )
+                const userJoined = newPresences?.[0];
+                if (userJoined?.id === me.id) return; // don't toast self
+                toast(`${userJoined.username ?? "A player"} joined the game`);
+            })
+            .on("presence", { event: "leave" }, ({ key, leftPresences }) => {
+                console.log("leave:", key, leftPresences);
+                const userLeft = leftPresences?.[0];
+                if (userLeft?.id === me.id) return; // don't toast self
+                toast(`${userLeft.username ?? "A player"} left the game`);
+            })
             .subscribe(async (status) => {
                 if (status !== "SUBSCRIBED") return;
                 await channel.track({

@@ -51,11 +51,14 @@ export default function SudokuBoard({
                     return (
                         <input
                             key={`${r}-${c}`}
+                            type="tel"            // triggers a numeric keypad on most phones
+                            inputMode="numeric"   // explicit hint for modern browsers
+                            pattern="[1-9]*"      // tells iOS it only needs 1-9 keys (no +/- or .)
                             value={cell.v ?? ""}
                             disabled={cell.fixed}
                             maxLength={1}
                             onChange={e => {
-                                const v = e.target.value.slice(-1);      // last typed char
+                                const v = e.target.value.slice(-1);
                                 if (/^[1-9]?$/.test(v)) setCell(r, c, v);
                             }}
                             className={className}
